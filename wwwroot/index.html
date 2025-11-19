@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Viewer</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Invoice Management System</h1>
+        
+        <div class="controls">
+            <button id="refreshBtn" class="btn btn-primary">Refresh Invoices</button>
+            <button id="createBtn" class="btn btn-success">Create New Invoice</button>
+        </div>
+
+        <div id="invoice-container" class="invoice-container">
+            <p class="loading">Loading invoices...</p>
+        </div>
+    </div>
+
+    <!-- Modal for creating invoice -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create New Invoice</h2>
+            <form id="createForm">
+                <div class="form-group">
+                    <label for="customerName">Customer Name:</label>
+                    <input type="text" id="customerName" name="customerName" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Invoice</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for adding items -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add Item to Invoice</h2>
+            <form id="itemForm">
+                <div class="form-group">
+                    <label for="itemName">Item Name:</label>
+                    <input type="text" id="itemName" name="itemName" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemPrice">Price:</label>
+                    <input type="number" id="itemPrice" name="itemPrice" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemQuantity">Quantity:</label>
+                    <input type="number" id="itemQuantity" name="itemQuantity" value="1" min="1" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Item</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
