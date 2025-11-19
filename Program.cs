@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using InvoiceApi.Data;
 
-// Ensure Development environment
+// Force Development for Swagger unless overridden
 if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")))
 {
     Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
@@ -10,7 +10,9 @@ if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONM
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services
 builder.Services.AddControllers();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<InvoiceDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -22,61 +24,50 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Invoice API",
         Version = "v1",
-        Description = "API for managing invoices and invoice items",
-        Contact = new OpenApiContact
-        {
-            Name = "Invoice API Support"
-        }
+        Description = "API for managing invoices and items",
+        Contact = new OpenApiContact { Name = "Invoice API Support" }
     });
 
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
-        c.IncludeXmlComments(xmlPath);
-    }
+    if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
 });
 
-//  CORS
+// CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+// Swagger (enable for all environments)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Invoice API v1");
-        c.RoutePrefix = "swagger";
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Invoice API v1");
+    c.RoutePrefix = "swagger";
+});
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
+// Static files & middleware
+app.UseStaticFiles();
 app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
 
-app.UseStaticFiles();
+// REQUIRED FOR RAILWAY (PORT BINDING)
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Urls.Add($"http://0.0.0.0:{port}");
 
 // Seed database
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<InvoiceDbContext>();
-    
+
     try
     {
         context.Database.Migrate();
@@ -85,12 +76,13 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
+        logger.LogError(ex, "Error while seeding database.");
     }
 }
 
 app.Run();
 
+// Seeder
 static void SeedDatabase(InvoiceDbContext context)
 {
     if (!context.Invoices.Any())
