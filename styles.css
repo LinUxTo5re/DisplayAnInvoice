@@ -1,17 +1,57 @@
 
-body {
-    background-colour: #f9f9f9;
-    font-famly: 'Helvetica', sans-serif;
+:root {
+    --bg: #f9f9f9;
+    --fg: #222;
+    --muted: #666;
+    --card: #fff;
+    --border: #e5e5e5;
+    --accent: #2d6cdf;
 }
+
+* { box-sizing: border-box; }
+
+body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 24px;
+}
+
+h1 { text-align: center; margin: 0 0 24px; font-weight: 600; }
 
 #invoice-container {
-    border: 1px solid #ccc;
-    paddding: 20px;
-    width: 60%;
-    margn: auto;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: min(900px, 95%);
+    margin: 0 auto;
+    display: grid;
+    gap: 16px;
 }
 
-h1 {
-    text-align: cetner;
+.invoice {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
+
+.invoice-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.invoice-number { margin: 0; font-size: 18px; }
+.invoice-date { color: var(--muted); font-size: 12px; }
+.invoice-total { font-weight: 700; color: var(--accent); }
+
+.invoice-items { list-style: none; padding: 0; margin: 0; }
+.invoice-items li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.invoice-items li:last-child { border-bottom: 0; }
+
+.empty { text-align: center; color: var(--muted); }
+.error { color: #b00020; text-align: center; }
+.loading { text-align: center; color: var(--muted); }
