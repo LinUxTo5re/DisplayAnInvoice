@@ -2,11 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using InvoiceApi.Data;
 
-// Force Development for Swagger unless overridden
-if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")))
-{
-    Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
-}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,10 +48,14 @@ app.UseSwaggerUI(c =>
 });
 
 // Static files & middleware
+app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
+
+// SPA fallback to index.html for client-side routes
+app.MapFallbackToFile("index.html");
 
 // REQUIRED FOR RAILWAY (PORT BINDING)
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
