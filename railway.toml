@@ -1,0 +1,6 @@
+[build]
+builder = "heroku/buildpacks"
+buildpacks = ["https://github.com/jincod/dotnetcore-buildpack"]
+
+[deploy]
+startCommand = "dotnet out/InvoiceApi.dll"
