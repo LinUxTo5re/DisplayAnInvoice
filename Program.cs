@@ -2,16 +2,29 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using InvoiceApi.Data;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
+// -----------------------------
+// Database Configuration
+// -----------------------------
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<InvoiceDbContext>(options =>
+    options.UseNpgsql(connectionString, npgsqlOptions =>
+    {
+        // Increase timeout to avoid Supabase pooler timeouts
+        npgsqlOptions.CommandTimeout(180);
+    })
+);
+
+// -----------------------------
+// Add Controllers
+// -----------------------------
 builder.Services.AddControllers();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<InvoiceDbContext>(options =>
-    options.UseNpgsql(connectionString));
-
+// -----------------------------
+// Swagger (enable ALWAYS)
+// -----------------------------
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -25,21 +38,27 @@ builder.Services.AddSwaggerGen(c =>
 
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
+    if (File.Exists(xmlPath))
+        c.IncludeXmlComments(xmlPath);
 });
 
+// -----------------------------
 // CORS
+// -----------------------------
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-    });
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
+// -----------------------------
+// Build App
+// -----------------------------
 var app = builder.Build();
 
-// Swagger (enable for all environments)
+// -----------------------------
+// Enable Swagger (Dev + Prod)
+// -----------------------------
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -47,21 +66,28 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-// Static files & middleware
+// -----------------------------
+// Static Files + Middleware
+// -----------------------------
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
 
-// SPA fallback to index.html for client-side routes
+// SPA fallback (React/HTML)
 app.MapFallbackToFile("index.html");
 
-// REQUIRED FOR RAILWAY (PORT BINDING)
+// -----------------------------
+// BIND TO RENDER PORT
+// -----------------------------
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 app.Urls.Add($"http://0.0.0.0:{port}");
 
-// Seed database
+// -----------------------------
+// REMOVE MIGRATION ON STARTUP
+// (Supabase transaction pooler cannot handle migration load)
+// -----------------------------
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -69,60 +95,20 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        context.Database.Migrate();
-        SeedDatabase(context);
+        // Only TEST connection
+        if (context.Database.CanConnect())
+        {
+            Console.WriteLine("Connected to database successfully.");
+        }
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Error while seeding database.");
+        logger.LogError(ex, "Database connection failed at startup.");
     }
 }
 
+// -----------------------------
+// Start App
+// -----------------------------
 app.Run();
-
-// Seeder
-static void SeedDatabase(InvoiceDbContext context)
-{
-    if (!context.Invoices.Any())
-    {
-        var invoice = new InvoiceApi.Models.Invoice
-        {
-            CustomerName = "John Doe",
-            InvoiceDate = DateTime.UtcNow,
-            TotalAmount = 0
-        };
-
-        context.Invoices.Add(invoice);
-        context.SaveChanges();
-
-        var items = new List<InvoiceApi.Models.InvoiceItem>
-        {
-            new InvoiceApi.Models.InvoiceItem
-            {
-                InvoiceId = invoice.InvoiceId,
-                Name = "Widget A",
-                Price = 19.99m,
-                Quantity = 2
-            },
-            new InvoiceApi.Models.InvoiceItem
-            {
-                InvoiceId = invoice.InvoiceId,
-                Name = "Widget B",
-                Price = 29.99m,
-                Quantity = 1
-            },
-            new InvoiceApi.Models.InvoiceItem
-            {
-                InvoiceId = invoice.InvoiceId,
-                Name = "Service Fee",
-                Price = 10.00m,
-                Quantity = 1
-            }
-        };
-
-        context.InvoiceItems.AddRange(items);
-        invoice.TotalAmount = items.Sum(i => i.Price * i.Quantity);
-        context.SaveChanges();
-    }
-}
