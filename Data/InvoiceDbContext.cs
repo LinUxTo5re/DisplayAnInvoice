@@ -15,8 +15,6 @@ namespace InvoiceApi.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
-            // Configure relationships
             modelBuilder.Entity<InvoiceItem>()
                 .HasOne(i => i.Invoice)
                 .WithMany(inv => inv.Items)
