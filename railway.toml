@@ -1,6 +1,8 @@
 [build]
-builder = "heroku/buildpacks"
-buildpacks = ["https://github.com/jincod/dotnetcore-buildpack"]
+nixpacks = true
 
-[deploy]
-startCommand = "dotnet out/InvoiceApi.dll"
+[build.nixpacksPlan]
+phases.setup = { nixPkgs = ["dotnet-sdk_8"] }
+phases.install.cmds = ["dotnet restore InvoiceApi.csproj"]
+phases.build.cmds = ["dotnet publish InvoiceApi.csproj -c Release -o out"]
+phases.start.cmd = "dotnet out/InvoiceApi.dll"
